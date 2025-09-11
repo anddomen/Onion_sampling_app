@@ -21,25 +21,28 @@ ui <- fluidPage(
         card(
           card_header("Scenario 1"),
           sliderInput("scenario1.prev",
-                      "Incoming contamination prevalence proportion",
-                      min = 0.001,
-                      max = 1,
-                      value = 0.017
+                      "Incoming contamination prevalence percent",
+                      min   = 0.001*100,
+                      max   = 1*100,
+                      value = 0.1,
+                      step  = 0.1,
+                      post  = "%",
+                      ticks = FALSE
           ),
           tags$ul(
-            tags$li("A low contamination prevalence is 0.001"),
-            tags$li("A normal contamination prevalence is 0.017"),
-            tags$li("A high contamination prevalence is 0.363")
+            tags$li("A low contamination prevalence is 0.1%"),
+            tags$li("A normal contamination prevalence is 1.7%"),
+            tags$li("A high contamination prevalence is 36.3%")
           ),
           
           numericInput("scenario1.lot",
                        "Enter lot size",
                        value = 22000000,
-                       min = 1000,
-                       max = 30000000,
-                       step = 1000000),
+                       min   = 1000,
+                       max   = 30000000,
+                       step  = 1000000),
           
-          numericInput("scenario1.sample", # Fixed duplicate ID
+          numericInput("scenario1.sample", 
                        "How many onions do you want to sample?",
                        value = 60,
                        min   = 1,
@@ -51,17 +54,20 @@ ui <- fluidPage(
           card_header("Scenario 2"),
           sliderInput("scenario2.prev",
                       "Incoming contamination prevalence",
-                      min = 0.001,
-                      max = 1,
-                      value = 0.017
+                      min   = 0.001*100,
+                      max   = 1*100,
+                      value = 0.017*100,
+                      step  = 0.1,
+                      post  = "%",
+                      ticks = FALSE
           ),
           
           numericInput("scenario2.lot",
                        "Enter lot size",
                        value = 4250000,
-                       min = 1000,
-                       max = 30000000,
-                       step = 1000000),
+                       min   = 1000,
+                       max   = 30000000,
+                       step  = 1000000),
           
           numericInput("scenario2.sample", # Fixed duplicate ID
                        "How many onions do you want to sample?",
@@ -76,7 +82,8 @@ ui <- fluidPage(
 
     ## Scenario results ----
     layout_columns(
-      col_widths = c(6, 6),
+      col_widths = c(6, 6, 12),
+      row_heights = c(1,2), 
       
       card(
         card_header("Scenario 1 Results"),
@@ -88,6 +95,11 @@ ui <- fluidPage(
         card_header("Scenario 2 Results"),
         card_body(
           uiOutput("scenario2_output")
+        )
+      ),
+      card(
+        card_body(
+          plotOutput("summary_plot")
         )
       )
     )
@@ -119,19 +131,18 @@ server <- function(input, output) {
     # positive onions
     pos.onions.scen1.stor <- numeric(length = n_sim)
     pos.onions.scen2.stor <- numeric(length = n_sim)
-    
-    
+
     for (i in 1:n_sim){
       ## Generate distributions based off user input ----
       scenario1.sim <- generate_filtered_ZAGA(input$scenario1.sample,    # Units: logCFU/onion
                                               mu    = norm.incom.contam.mu,
                                               sigma = norm.incom.contam.sigma,
-                                              nu    = 1-input$scenario1.prev)
+                                              nu    = 1-(input$scenario1.prev/100))
       
       scenario2.sim <- generate_filtered_ZAGA(input$scenario2.sample,    # Units: logCFU/onion
                                               mu    = norm.incom.contam.mu,
                                               sigma = norm.incom.contam.sigma,
-                                              nu    = 1-input$scenario2.prev)
+                                              nu    = 1-(input$scenario2.prev/100))
       
       ## Update storage vectors ----
       # across iterations (lots), sum up any time the any of the samples are pos
@@ -201,11 +212,16 @@ server <- function(input, output) {
     } else {
       div(
         h5("Summary Statistics"),
-        h6(paste("Across", n_sim, "simulated lots:")),
-        p(paste("Number of positive lots caught:", sum(results$pos.lots.scen1_results))),
-        p(paste("Number of positive onions caught:", sum(results$pos.onions.scen1_results), "out of", input$scenario1.sample*n_sim, "total onions sampled.")),
-        # summary plot, move when ready
-        plotOutput("summary_plot", height = "400px")
+        h6(paste("Across", 
+                 format(n_sim, big.mark = ","), 
+                 "simulated lots:")),
+        p(paste("Number of positive lots caught:",
+                format(sum(results$pos.lots.scen1_results), big.mark = ","))),
+        p(paste("Number of positive onions caught:",
+                format(sum(results$pos.onions.scen1_results), big.mark = ","),
+                "out of",
+                format(input$scenario1.sample * n_sim, big.mark = ",", scientific = FALSE),
+                "total onions sampled."))
       )
     }
   })
@@ -218,14 +234,22 @@ server <- function(input, output) {
     } else {
       div(
         h5("Summary Statistics"),
-        h6(paste("Across", n_sim, "simulated lots:")),
-        p(paste("Number of positive lots caught:", sum(results$pos.lots.scen2_results))),
-        p(paste("Number of positive onions caught:", sum(results$pos.onions.scen2_results)))
+        h6(paste("Across", 
+                 format(n_sim, big.mark = ","), 
+                 "simulated lots:")),
+        p(paste("Number of positive lots caught:",
+                format(sum(results$pos.lots.scen2_results), big.mark = ","))),
+        p(paste("Number of positive onions caught:",
+                format(sum(results$pos.onions.scen2_results), big.mark = ","),
+                "out of",
+                format(input$scenario2.sample * n_sim, big.mark = ",", scientific = FALSE),
+                "total onions sampled."))
       )
+      
     }
   })
   
-  
+  ## Generate summary plot ----
   output$summary_plot <- renderPlot({
     if (!is.null(results$pos.lots.scen1_results)) {
       
@@ -244,16 +268,19 @@ server <- function(input, output) {
                            limits = c(0, 100)) +
         labs(
           title = "Detection Results by Scenario",
-          subtitle = paste("Based on", n_sim, "simulations"),
+          subtitle = paste("Based on", format(n_sim, big.mark = ","), "simulated lots"),
           x = "Scenario",
           y = "Percentage",
           fill = "Result"
         ) +
         theme_linedraw() +
         theme(
+          text = element_text(size = 18),
+          strip.text = element_text(face = "bold"),
           axis.title.x = element_blank(),
           legend.position = "bottom"
         )
+      
     }
   })
   
