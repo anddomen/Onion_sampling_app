@@ -2,6 +2,7 @@ library(shiny)
 library(bslib)
 library(gamlss)
 library(tidyverse)
+library(wesanderson)
 
 source("00_setup.R")
 
@@ -119,9 +120,6 @@ server <- function(input, output) {
     pos.onions.scen1.stor <- numeric(length = n_sim)
     pos.onions.scen2.stor <- numeric(length = n_sim)
     
-    # actual simulation values
-    scen1.sim.stor <- tibble()
-    scen2.sim.stor <- tibble()
     
     for (i in 1:n_sim){
       ## Generate distributions based off user input ----
@@ -144,22 +142,6 @@ server <- function(input, output) {
       pos.onions.scen1.stor[i] <- sum(scenario1.sim > 0)
       pos.onions.scen2.stor[i] <- sum(scenario2.sim > 0)
       
-      # save the actual simulations
-      # scenario 1
-      iteration.data.scen1 <- tibble(
-        iteration = i,
-        sample    = 1:length(scenario1.sim),
-        value     = scenario1.sim
-      )
-      scen1.sim.stor <- bind_rows(scen1.sim.stor, iteration.data.scen1)
-      
-      # # scenario 2
-      # iteration.data.scen2 <- tibble(
-      #   iteration = i,
-      #   sample    = 1:length(scenario2.sim),
-      #   value     = scenario2.sim
-      # )
-      # scen2.sim.stor <- bind_rows(scen2.sim.stor, iteration.data.scen2)
     }
     
     # Store results in reactive values
@@ -167,9 +149,50 @@ server <- function(input, output) {
     results$pos.lots.scen2_results   <- pos.lots.scen2.stor
     results$pos.onions.scen1_results <- pos.onions.scen1.stor 
     results$pos.onions.scen2_results <- pos.onions.scen2.stor  
-    # results$scen1.sim_results        <- scen1.sim.stor
-    # results$scen2.sim_results        <- scen2.sim.stor
   })
+  
+  ## Create the plot data ----
+  create_summary_data <- function(results, n_sim) {
+    
+    # Calculate proportions for lots
+    lots_data <- data.frame(
+      scenario = c("Scenario 1", "Scenario 2"),
+      positive = c(
+        sum(results$pos.lots.scen1_results) / n_sim * 100,
+        sum(results$pos.lots.scen2_results) / n_sim * 100
+      ),
+      metric = "Lots"
+    )
+    
+    # Calculate proportions for onions
+    total_onions_scen1 <- length(results$pos.onions.scen1_results) * input$scenario1.sample
+    total_onions_scen2 <- length(results$pos.onions.scen2_results) * input$scenario2.sample
+    
+    onions_data <- data.frame(
+      scenario = c("Scenario 1", "Scenario 2"),
+      positive = c(
+        sum(results$pos.onions.scen1_results) / total_onions_scen1 * 100,
+        sum(results$pos.onions.scen2_results) / total_onions_scen2 * 100
+      ),
+      metric = "Onions"
+    )
+    
+    # Combine and add negative percentages
+    combined_data <- rbind(lots_data, onions_data)
+    combined_data$negative <- 100 - combined_data$positive
+    
+    # Reshape to long format for stacking
+    plot_data <- combined_data %>%
+      pivot_longer(cols = c(positive, negative), 
+                   names_to = "result", 
+                   values_to = "percentage") %>%
+      mutate(
+        result = factor(result, levels = c("negative", "positive")),
+        metric = factor(metric, levels = c("Lots", "Onions"))
+      )
+    
+    return(plot_data)
+  }
   
   ## Render results for scenario 1 ----
   output$scenario1_output <- renderUI({
@@ -181,7 +204,8 @@ server <- function(input, output) {
         h6(paste("Across", n_sim, "simulated lots:")),
         p(paste("Number of positive lots caught:", sum(results$pos.lots.scen1_results))),
         p(paste("Number of positive onions caught:", sum(results$pos.onions.scen1_results), "out of", input$scenario1.sample*n_sim, "total onions sampled.")),
-        plotOutput("scenario1_plot", height = "300px")
+        # summary plot, move when ready
+        plotOutput("summary_plot", height = "400px")
       )
     }
   })
@@ -196,36 +220,42 @@ server <- function(input, output) {
         h5("Summary Statistics"),
         h6(paste("Across", n_sim, "simulated lots:")),
         p(paste("Number of positive lots caught:", sum(results$pos.lots.scen2_results))),
-        p(paste("Number of positive onions caught:", sum(results$pos.onions.scen2_results))),
-
-        # plotOutput("scenario2_plot", height = "300px")
+        p(paste("Number of positive onions caught:", sum(results$pos.onions.scen2_results)))
       )
     }
   })
   
-  # plot outputs
-  # output$scenario1_plot <- renderPlot({
-  #   if (!is.null(results$scen1.sim_results)) {
-  #     results$scen1.sim_results |> 
-  #       ggplot(aes(x = value)) +
-  #       geom_density() +
-  #       labs(title = "Distribution of Simulation Values",
-  #            x = "Contamination Level (log CFU/onion)",
-  #            y = "Number of onions")
-  #     # hist(results$pos.onions.scen1_results,
-  #     #      main = "Distribution of Positive Onions (Scenario 1)",
-  #     #      xlab = "Number of Positive Onions",
-  #     #      col = "lightblue")
-  #   }
-  # })
-  # 
-  # output$scenario2_plot <- renderPlot({
-  #   if (!is.null(results$pos.onions.scen2_results)) {
-  #     hist(results$pos.onions.scen2_results, 
-  #          main = "Distribution of Positive Onions (Scenario 2)",
-  #          xlab = "Number of Positive Onions")
-  #   }
-  # })
+  
+  output$summary_plot <- renderPlot({
+    if (!is.null(results$pos.lots.scen1_results)) {
+      
+      plot_data <- create_summary_data(results, n_sim)
+      
+      ggplot(plot_data, aes(x = scenario, 
+                            y = percentage, 
+                            fill = result)) +
+        geom_col(position = "stack", width = 0.7) +
+        facet_grid(rows = vars(metric), 
+                   labeller = labeller(metric = c("Lots" = "Positive Lots Detected", 
+                                                  "Onions" = "Positive Onions Detected"))) +
+        scale_fill_manual(values = c("negative" = "#00A08A", "positive" = "#FF0000"),
+                          labels = c("negative" = "Negative", "positive" = "Positive")) +
+        scale_y_continuous(labels = function(x) paste0(x, "%"), 
+                           limits = c(0, 100)) +
+        labs(
+          title = "Detection Results by Scenario",
+          subtitle = paste("Based on", n_sim, "simulations"),
+          x = "Scenario",
+          y = "Percentage",
+          fill = "Result"
+        ) +
+        theme_linedraw() +
+        theme(
+          axis.title.x = element_blank(),
+          legend.position = "bottom"
+        )
+    }
+  })
   
 }
 
