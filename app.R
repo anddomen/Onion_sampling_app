@@ -1,6 +1,7 @@
 library(shiny)
 library(bslib)
 library(gamlss)
+library(tidyverse)
 
 source("00_setup.R")
 
@@ -103,16 +104,24 @@ server <- function(input, output) {
     pos.lots.scen1_results  = NULL,
     pos.lots.scen2_results  = NULL,
     pos.onions.scen1_results = NULL,
-    pos.onions.scen2_results = NULL
+    pos.onions.scen2_results = NULL,
+    scen1.sim_results        = NULL,
+    scen2.sim_results        = NULL
   )
   
   observeEvent(input$run_sim, {
     # Prep vectors
+    # positive lots
     pos.lots.scen1.stor <- numeric(length = n_sim)
     pos.lots.scen2.stor <- numeric(length = n_sim)
     
+    # positive onions
     pos.onions.scen1.stor <- numeric(length = n_sim)
     pos.onions.scen2.stor <- numeric(length = n_sim)
+    
+    # actual simulation values
+    scen1.sim.stor <- tibble()
+    scen2.sim.stor <- tibble()
     
     for (i in 1:n_sim){
       ## Generate distributions based off user input ----
@@ -134,13 +143,32 @@ server <- function(input, output) {
       # across iterations, sum up the number of positive onions
       pos.onions.scen1.stor[i] <- sum(scenario1.sim > 0)
       pos.onions.scen2.stor[i] <- sum(scenario2.sim > 0)
+      
+      # save the actual simulations
+      # scenario 1
+      iteration.data.scen1 <- tibble(
+        iteration = i,
+        sample    = 1:length(scenario1.sim),
+        value     = scenario1.sim
+      )
+      scen1.sim.stor <- bind_rows(scen1.sim.stor, iteration.data.scen1)
+      
+      # # scenario 2
+      # iteration.data.scen2 <- tibble(
+      #   iteration = i,
+      #   sample    = 1:length(scenario2.sim),
+      #   value     = scenario2.sim
+      # )
+      # scen2.sim.stor <- bind_rows(scen2.sim.stor, iteration.data.scen2)
     }
     
-    # Store results in reactive values (FIXED: correct variable assignments)
+    # Store results in reactive values
     results$pos.lots.scen1_results   <- pos.lots.scen1.stor
     results$pos.lots.scen2_results   <- pos.lots.scen2.stor
     results$pos.onions.scen1_results <- pos.onions.scen1.stor 
     results$pos.onions.scen2_results <- pos.onions.scen2.stor  
+    # results$scen1.sim_results        <- scen1.sim.stor
+    # results$scen2.sim_results        <- scen2.sim.stor
   })
   
   ## Render results for scenario 1 ----
@@ -150,38 +178,44 @@ server <- function(input, output) {
     } else {
       div(
         h5("Summary Statistics"),
-        h6(paste("Across", n_sim, "simulated lots:")), 
+        h6(paste("Across", n_sim, "simulated lots:")),
         p(paste("Number of positive lots caught:", sum(results$pos.lots.scen1_results))),
-        p(paste("Number of positive onions:", sum(results$pos.onions.scen1_results))),
-        
-        # plotOutput("scenario1_plot", height = "300px")
+        p(paste("Number of positive onions caught:", sum(results$pos.onions.scen1_results), "out of", input$scenario1.sample*n_sim, "total onions sampled.")),
+        plotOutput("scenario1_plot", height = "300px")
       )
     }
   })
   
   ## Render results for scenario 2 ----
   output$scenario2_output <- renderUI({
-    # FIXED: Check for the correct variable name
+    # Check for the correct variable name
     if (is.null(results$pos.lots.scen2_results)) {
       p("Click Go to see results")
     } else {
       div(
         h5("Summary Statistics"),
-        h6(paste("Across", n_sim, "simulated lots:")),  # FIXED: Use actual n_sim value
+        h6(paste("Across", n_sim, "simulated lots:")),
         p(paste("Number of positive lots caught:", sum(results$pos.lots.scen2_results))),
-        p(paste("Number of positive onions:", sum(results$pos.onions.scen2_results))),
+        p(paste("Number of positive onions caught:", sum(results$pos.onions.scen2_results))),
 
         # plotOutput("scenario2_plot", height = "300px")
       )
     }
   })
   
-  ## plot outputs
+  # plot outputs
   # output$scenario1_plot <- renderPlot({
-  #   if (!is.null(results$pos.onions.scen1_results)) {
-  #     hist(results$pos.onions.scen1_results, 
-  #          main = "Distribution of Positive Onions (Scenario 1)",
-  #          xlab = "Number of Positive Onions")
+  #   if (!is.null(results$scen1.sim_results)) {
+  #     results$scen1.sim_results |> 
+  #       ggplot(aes(x = value)) +
+  #       geom_density() +
+  #       labs(title = "Distribution of Simulation Values",
+  #            x = "Contamination Level (log CFU/onion)",
+  #            y = "Number of onions")
+  #     # hist(results$pos.onions.scen1_results,
+  #     #      main = "Distribution of Positive Onions (Scenario 1)",
+  #     #      xlab = "Number of Positive Onions",
+  #     #      col = "lightblue")
   #   }
   # })
   # 
