@@ -96,60 +96,103 @@ ui <- fluidPage(
 # Define server ----
 server <- function(input, output) {
   # define number of iterations
-  n_sim <- 100
+  n_sim <- 10000
   
   # Create reactive values to store results
   results <- reactiveValues(
-    scen1_results = NULL,
-    scen2_results = NULL
+    pos.lots.scen1_results  = NULL,
+    pos.lots.scen2_results  = NULL,
+    pos.onions.scen1_results = NULL,
+    pos.onions.scen2_results = NULL
   )
   
   observeEvent(input$run_sim, {
     # Prep vectors
-    scen1.stor <- numeric(length = n_sim)
-    scen2.stor <- numeric(length = n_sim)
+    pos.lots.scen1.stor <- numeric(length = n_sim)
+    pos.lots.scen2.stor <- numeric(length = n_sim)
+    
+    pos.onions.scen1.stor <- numeric(length = n_sim)
+    pos.onions.scen2.stor <- numeric(length = n_sim)
     
     for (i in 1:n_sim){
       ## Generate distributions based off user input ----
       scenario1.sim <- generate_filtered_ZAGA(input$scenario1.sample,    # Units: logCFU/onion
                                               mu    = norm.incom.contam.mu,
                                               sigma = norm.incom.contam.sigma,
-                                              nu    = input$scenario1.prev)
+                                              nu    = 1-input$scenario1.prev)
       
       scenario2.sim <- generate_filtered_ZAGA(input$scenario2.sample,    # Units: logCFU/onion
                                               mu    = norm.incom.contam.mu,
                                               sigma = norm.incom.contam.sigma,
-                                              nu    = input$scenario2.prev)
+                                              nu    = 1-input$scenario2.prev)
       
       ## Update storage vectors ----
-      # across iterations, sum up the ones that catch a positive
-      scen1.stor[i] <- sum(scenario1.sim > 0)
-      scen2.stor[i] <- sum(scenario2.sim > 0)
+      # across iterations (lots), sum up any time the any of the samples are pos
+      pos.lots.scen1.stor[i] <- sum(any(scenario1.sim > 0))
+      pos.lots.scen2.stor[i] <- sum(any(scenario2.sim > 0))
+      
+      # across iterations, sum up the number of positive onions
+      pos.onions.scen1.stor[i] <- sum(scenario1.sim > 0)
+      pos.onions.scen2.stor[i] <- sum(scenario2.sim > 0)
     }
     
-    # Store results in reactive values
-    results$scen1_results <- scen1.stor
-    results$scen2_results <- scen2.stor
+    # Store results in reactive values (FIXED: correct variable assignments)
+    results$pos.lots.scen1_results   <- pos.lots.scen1.stor
+    results$pos.lots.scen2_results   <- pos.lots.scen2.stor
+    results$pos.onions.scen1_results <- pos.onions.scen1.stor 
+    results$pos.onions.scen2_results <- pos.onions.scen2.stor  
   })
   
   ## Render results for scenario 1 ----
   output$scenario1_output <- renderUI({
-    if (is.null(results$scen1_results)) {
+    if (is.null(results$pos.lots.scen1_results)) {
       p("Click Go to see results")
     } else {
-      results$scen1_results
+      div(
+        h5("Summary Statistics"),
+        h6(paste("Across", n_sim, "simulated lots:")), 
+        p(paste("Number of positive lots caught:", sum(results$pos.lots.scen1_results))),
+        p(paste("Number of positive onions:", sum(results$pos.onions.scen1_results))),
+        
+        # plotOutput("scenario1_plot", height = "300px")
+      )
     }
   })
-
+  
   ## Render results for scenario 2 ----
   output$scenario2_output <- renderUI({
-    if (is.null(results$scen2_results)) {
+    # FIXED: Check for the correct variable name
+    if (is.null(results$pos.lots.scen2_results)) {
       p("Click Go to see results")
     } else {
-      results$scen2_results
+      div(
+        h5("Summary Statistics"),
+        h6(paste("Across", n_sim, "simulated lots:")),  # FIXED: Use actual n_sim value
+        p(paste("Number of positive lots caught:", sum(results$pos.lots.scen2_results))),
+        p(paste("Number of positive onions:", sum(results$pos.onions.scen2_results))),
+
+        # plotOutput("scenario2_plot", height = "300px")
+      )
     }
   })
-
+  
+  ## plot outputs
+  # output$scenario1_plot <- renderPlot({
+  #   if (!is.null(results$pos.onions.scen1_results)) {
+  #     hist(results$pos.onions.scen1_results, 
+  #          main = "Distribution of Positive Onions (Scenario 1)",
+  #          xlab = "Number of Positive Onions")
+  #   }
+  # })
+  # 
+  # output$scenario2_plot <- renderPlot({
+  #   if (!is.null(results$pos.onions.scen2_results)) {
+  #     hist(results$pos.onions.scen2_results, 
+  #          main = "Distribution of Positive Onions (Scenario 2)",
+  #          xlab = "Number of Positive Onions")
+  #   }
+  # })
+  
 }
 
 # Run the application 
