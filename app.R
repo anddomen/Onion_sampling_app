@@ -6,12 +6,23 @@ library(wesanderson)
 
 source("00_setup.R")
 
+
 # Define UI ----
 ui <- fluidPage(
-    
+  theme = bs_theme(version = 5, bootswatch = "lux"),
+  
+  div(class = "navbar navbar-expand-lg bg-dark",
+      div(class = "container-fluid",
+          h1("Product Sampling App", 
+             class = "navbar-brand mb-0 h1",
+             style = "color: white !important;")
+      )
+  ),
+  
+  
   ## App title ----
     page_sidebar(
-      title = "Onion Sampling App",
+      title = NULL,
       
       sidebar = sidebar(
         width = 450,
@@ -19,22 +30,9 @@ ui <- fluidPage(
         
         ## Scenario 1 options ----
         card(
-          card_header("Scenario 1"),
-          sliderInput("scenario1.prev",
-                      "Incoming contamination prevalence percent",
-                      min   = 0.001*100,
-                      max   = 1*100,
-                      value = 0.1,
-                      step  = 0.1,
-                      post  = "%",
-                      ticks = FALSE
-          ),
-          tags$ul(
-            tags$li("A low contamination prevalence is 0.1%"),
-            tags$li("A normal contamination prevalence is 1.7%"),
-            tags$li("A high contamination prevalence is 36.3%")
-          ),
-          
+          card_header(class = "bg-dark text-white",
+            "Scenario 1"),
+
           numericInput("scenario1.lot",
                        "Enter lot size",
                        value = 22000000,
@@ -47,20 +45,23 @@ ui <- fluidPage(
                        value = 60,
                        min   = 1,
                        max   = 500),
+          
+          sliderInput("scenario1.prev",
+                      "Percent of lot that's contaminated",
+                      min   = 0.01,
+                      max   = 10,
+                      value = 0.1,
+                      step  = 0.01,
+                      post  = "%",
+                      ticks = FALSE
+          ),
+          
         ),
         
         ## Scenario 2 options ----
         card(
-          card_header("Scenario 2"),
-          sliderInput("scenario2.prev",
-                      "Incoming contamination prevalence",
-                      min   = 0.001*100,
-                      max   = 1*100,
-                      value = 0.017*100,
-                      step  = 0.1,
-                      post  = "%",
-                      ticks = FALSE
-          ),
+          card_header(class = "bg-dark text-white",
+                      "Scenario 2"),
           
           numericInput("scenario2.lot",
                        "Enter lot size",
@@ -75,6 +76,16 @@ ui <- fluidPage(
                        min   = 1,
                        max   = 500),
           
+          sliderInput("scenario2.prev",
+                      "Percent of lot that's contaminated",
+                      min   = 0.01,
+                      max   = 10,
+                      value = 0.1,
+                      step  = 0.01,
+                      post  = "%",
+                      ticks = FALSE
+          ),
+          
           actionButton("run_sim", "Go!", class = "btn-success", width = "100%")
         ),
       ),
@@ -86,13 +97,15 @@ ui <- fluidPage(
       row_heights = c(1,2), 
       
       card(
-        card_header("Scenario 1 Results"),
+        card_header(class="card text-white bg-info mb-3",
+          "Scenario 1 Results"),
         card_body(
           uiOutput("scenario1_output")
         )
       ),
       card(
-        card_header("Scenario 2 Results"),
+        card_header(class = "card text-white bg-warning mb-3",
+          "Scenario 2 Results"),
         card_body(
           uiOutput("scenario2_output")
         )
@@ -103,7 +116,25 @@ ui <- fluidPage(
         )
       )
     )
+    ),
+  div(
+    style = "position: fixed; bottom: 20px; right: 20px; z-index: 1000;",
+    div(
+      style = "display: flex; align-items: center; gap: 15px;",
+      # Logo 1 - Replace with your actual logo path/URL
+      tags$img(
+        src = "labLogo_orange+black.png",
+        # alt = "Logo 1",
+        style = "height: 100px; width: auto;"
+      ),
+      # Logo 2 - Replace with your actual logo path/URL  
+      tags$img(
+        src = "OSU_horizontal_2C_O_over_B.png", 
+        # alt = "Logo 2", 
+        style = "height: 50px; width: auto;"
+      )
     )
+  )
 )
 
 
@@ -262,7 +293,7 @@ server <- function(input, output) {
         facet_grid(rows = vars(metric), 
                    labeller = labeller(metric = c("Lots" = "Positive Lots Detected", 
                                                   "Onions" = "Positive Onions Detected"))) +
-        scale_fill_manual(values = c("negative" = "#00A08A", "positive" = "#FF0000"),
+        scale_fill_manual(values = c("negative" = "#9fc2b2", "positive" = "#a90636"),
                           labels = c("negative" = "Negative", "positive" = "Positive")) +
         scale_y_continuous(labels = function(x) paste0(x, "%"), 
                            limits = c(0, 100)) +
@@ -277,6 +308,7 @@ server <- function(input, output) {
         theme(
           text = element_text(size = 18),
           strip.text = element_text(face = "bold"),
+          strip.background = element_rect(fill = "#343a40"),
           axis.title.x = element_blank(),
           legend.position = "bottom"
         )
