@@ -13,9 +13,23 @@ ui <- fluidPage(
   
   div(class = "navbar navbar-expand-lg bg-dark",
       div(class = "container-fluid",
-          h1("Product Sampling App", 
+          h1("Product Sampling", 
              class = "navbar-brand mb-0 h1",
-             style = "color: white !important;")
+             style = "color: white !important;"),
+          
+          # Add logos to the right side
+          div(class = "navbar-nav ms-auto",
+              div(class = "d-flex align-items-center gap-3",
+                  tags$img(
+                    src = "labLogo_orange+white.png",
+                    style = "height: 100px; width: auto;"
+                  ),
+                  tags$img(
+                    src = "OSU_horizontal_2C_O_over_W.png", 
+                    style = "height: 50px; width: auto;"
+                  )
+              )
+          )
       )
   ),
   
@@ -30,7 +44,7 @@ ui <- fluidPage(
         
         ## Scenario 1 options ----
         card(
-          card_header(class = "bg-dark text-white",
+          card_header(class="card text-white bg-info mb-3",
             "Scenario 1"),
 
           numericInput("scenario1.lot",
@@ -41,7 +55,7 @@ ui <- fluidPage(
                        step  = 1000000),
           
           numericInput("scenario1.sample", 
-                       "How many onions do you want to sample?",
+                       "How many samples do you want to take?",
                        value = 60,
                        min   = 1,
                        max   = 500),
@@ -60,7 +74,7 @@ ui <- fluidPage(
         
         ## Scenario 2 options ----
         card(
-          card_header(class = "bg-dark text-white",
+          card_header(class = "card text-white bg-warning mb-3",
                       "Scenario 2"),
           
           numericInput("scenario2.lot",
@@ -71,7 +85,7 @@ ui <- fluidPage(
                        step  = 1000000),
           
           numericInput("scenario2.sample", # Fixed duplicate ID
-                       "How many onions do you want to sample?",
+                       "How many samples do you want to take?",
                        value = 60,
                        min   = 1,
                        max   = 500),
@@ -116,25 +130,7 @@ ui <- fluidPage(
         )
       )
     )
-    ),
-  div(
-    style = "position: fixed; bottom: 20px; right: 20px; z-index: 1000;",
-    div(
-      style = "display: flex; align-items: center; gap: 15px;",
-      # Logo 1 - Replace with your actual logo path/URL
-      tags$img(
-        src = "labLogo_orange+black.png",
-        # alt = "Logo 1",
-        style = "height: 100px; width: auto;"
-      ),
-      # Logo 2 - Replace with your actual logo path/URL  
-      tags$img(
-        src = "OSU_horizontal_2C_O_over_B.png", 
-        # alt = "Logo 2", 
-        style = "height: 50px; width: auto;"
-      )
     )
-  )
 )
 
 
@@ -246,13 +242,13 @@ server <- function(input, output) {
         h6(paste("Across", 
                  format(n_sim, big.mark = ","), 
                  "simulated lots:")),
-        p(paste("Number of positive lots caught:",
+        p("Number of positive lots caught:",
+          tags$span(class = "h2",
                 format(sum(results$pos.lots.scen1_results), big.mark = ","))),
-        p(paste("Number of positive onions caught:",
-                format(sum(results$pos.onions.scen1_results), big.mark = ","),
-                "out of",
-                format(input$scenario1.sample * n_sim, big.mark = ",", scientific = FALSE),
-                "total onions sampled."))
+        p("That's ", 
+          tags$span(class = "h2",
+                    paste0(sum(results$pos.lots.scen1_results)/n_sim * 100, "%")))
+        
       )
     }
   })
@@ -268,13 +264,12 @@ server <- function(input, output) {
         h6(paste("Across", 
                  format(n_sim, big.mark = ","), 
                  "simulated lots:")),
-        p(paste("Number of positive lots caught:",
-                format(sum(results$pos.lots.scen2_results), big.mark = ","))),
-        p(paste("Number of positive onions caught:",
-                format(sum(results$pos.onions.scen2_results), big.mark = ","),
-                "out of",
-                format(input$scenario2.sample * n_sim, big.mark = ",", scientific = FALSE),
-                "total onions sampled."))
+        p("Number of positive lots caught:",
+          tags$span(class = "h2",
+                    format(sum(results$pos.lots.scen2_results), big.mark = ","))),
+        p("That's ", 
+          tags$span(class = "h2",
+                    paste0(sum(results$pos.lots.scen2_results)/n_sim * 100, "%")))
       )
       
     }
@@ -284,15 +279,23 @@ server <- function(input, output) {
   output$summary_plot <- renderPlot({
     if (!is.null(results$pos.lots.scen1_results)) {
       
-      plot_data <- create_summary_data(results, n_sim)
+      plot_data <- create_summary_data(results, n_sim) 
+        
       
-      ggplot(plot_data, aes(x = scenario, 
+      plot_data |> 
+        filter(metric == "Lots") |> 
+        mutate(pct_formatted = paste0(percentage, "%")) |> 
+      ggplot(aes(x = scenario, 
                             y = percentage, 
-                            fill = result)) +
+                            fill = result,
+                            label = pct_formatted)) +
         geom_col(position = "stack", width = 0.7) +
-        facet_grid(rows = vars(metric), 
-                   labeller = labeller(metric = c("Lots" = "Positive Lots Detected", 
-                                                  "Onions" = "Positive Onions Detected"))) +
+        geom_text(
+          position = position_stack(vjust = 0.5),
+          size = 10,
+          fontface = "bold",
+          color = "gray0"
+        ) +
         scale_fill_manual(values = c("negative" = "#9fc2b2", "positive" = "#a90636"),
                           labels = c("negative" = "Negative", "positive" = "Positive")) +
         scale_y_continuous(labels = function(x) paste0(x, "%"), 
@@ -313,6 +316,25 @@ server <- function(input, output) {
           legend.position = "bottom"
         )
       
+      # onions_data <- data.frame(
+      #   scenario = c("Scenario 1", "Scenario 2"),
+      #   positive = c(
+      #     results$pos.onions.scen1_results,
+      #     results$pos.onions.scen2_results)) |> 
+      #   filter(positive != 0)
+      # 
+      # onions_data |> 
+      #   ggplot(aes(x = positive)) +
+      #   geom_bar()+
+      #   geom_text(
+      #     stat = "count",
+      #     position = position_stack(vjust = 0.5),
+      #     size = 10,
+      #     fontface = "bold",
+      #     color = "gray0",
+      #     aes(label = ..count..))+
+      #   scale_x_continuous(breaks = seq(min(onions_data$positive), max(onions_data$positive), by = 1))+
+      #   facet_grid(rows = vars(scenario))
     }
   })
   
