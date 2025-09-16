@@ -107,26 +107,29 @@ ui <- fluidPage(
 
     ## Scenario results ----
     layout_columns(
-      col_widths = c(6, 6, 12),
-      row_heights = c(1,2), 
+      col_widths = c(6, 6),
       
+      ### Scenario 1 ----
       card(
         card_header(class="card text-white bg-info mb-3",
           "Scenario 1 Results"),
         card_body(
-          uiOutput("scenario1_output")
+          uiOutput("scenario1_output"),
+          plotOutput("scen1_posLot_plot"),
+          uiOutput("scenario1_graph_title"),
+          plotOutput("scen1_posOnions.posLot_plot")
         )
       ),
+      
+      ### Scenario 2 ----
       card(
         card_header(class = "card text-white bg-warning mb-3",
           "Scenario 2 Results"),
         card_body(
-          uiOutput("scenario2_output")
-        )
-      ),
-      card(
-        card_body(
-          plotOutput("summary_plot")
+          uiOutput("scenario2_output"),
+          plotOutput("scen2_posLot_plot"),
+          uiOutput("scenario2_graph_title"),
+          plotOutput("scen2_posOnions.posLot_plot")
         )
       )
     )
@@ -232,7 +235,8 @@ server <- function(input, output) {
     return(plot_data)
   }
   
-  ## Render results for scenario 1 ----
+  ## Scenario 1 result render ----
+  ### Text output ----
   output$scenario1_output <- renderUI({
     if (is.null(results$pos.lots.scen1_results)) {
       p("Click Go to see results")
@@ -244,7 +248,7 @@ server <- function(input, output) {
                  "simulated lots:")),
         p("Number of positive lots caught:",
           tags$span(class = "h2",
-                format(sum(results$pos.lots.scen1_results), big.mark = ","))),
+                    format(sum(results$pos.lots.scen1_results), big.mark = ","))),
         p("That's ", 
           tags$span(class = "h2",
                     paste0(sum(results$pos.lots.scen1_results)/n_sim * 100, "%")))
@@ -253,7 +257,95 @@ server <- function(input, output) {
     }
   })
   
-  ## Render results for scenario 2 ----
+  output$scenario1_graph_title <- renderUI({
+    if (is.null(results$pos.lots.scen1_results)) {
+      NULL
+    } else {
+      h5("Even in positive lots, few individual samples test positive.")
+    }
+  })
+  
+  ### Positive lot graph ----
+  output$scen1_posLot_plot <- renderPlot({
+    if (!is.null(results$pos.lots.scen1_results)) {
+      plot_data <- create_summary_data(results, n_sim) 
+      
+      plot_data |> 
+        filter(metric == "Lots",
+               scenario == "Scenario 1") |> 
+        mutate(pct_formatted = paste0(round(percentage, digits = 1), "%")) |> 
+        ggplot(aes(x = scenario, 
+                   y = percentage, 
+                   fill = result,
+                   label = pct_formatted)) +
+        geom_col(position = "stack", width = 0.7) +
+        geom_text(
+          position = position_stack(vjust = 0.5),
+          size = 10,
+          fontface = "bold",
+          color = "gray0"
+        ) +
+        scale_fill_manual(values = c("negative" = "#9fc2b2", "positive" = "#a90636"),
+                          labels = c("negative" = "Negative", "positive" = "Positive")) +
+        scale_y_continuous(labels = function(x) paste0(x, "%"), 
+                           limits = c(0, 100)) +
+        labs(
+          title = "Scenario 1 — Detection Results by Lot",
+          subtitle = paste("Based on", format(n_sim, big.mark = ","), "simulated lots"),
+          y = "Percentage",
+          fill = "Result"
+        ) +
+        theme_classic()+
+        coord_flip()+
+        theme(
+          text = element_text(size = 18),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          legend.position = "bottom"
+        ) 
+      
+    }
+  })
+  
+  ### Positive samples graph ----
+  output$scen1_posOnions.posLot_plot <- renderPlot({
+    if (!is.null(results$pos.lots.scen1_results)) {
+      
+      onions_data <- data.frame(
+        scenario = c("Scenario 1"),
+        positive = c(
+          results$pos.onions.scen1_results)) |>
+        filter(positive != 0)
+      
+      onions_data |>
+        ggplot(aes(x = positive)) +
+        geom_bar(fill = "#1f9bcf")+
+        geom_text(
+          stat = "count",
+          position = position_stack(vjust = 0.5),
+          size = 10,
+          fontface = "bold",
+          color = "gray0",
+          aes(label = ..count..))+
+        scale_x_continuous(breaks = seq(min(onions_data$positive), max(onions_data$positive), by = 1)) +
+        labs(title = paste("Distribution across the", format(nrow(onions_data), big.mark = ",", scientific = FALSE), "simulated lots that tested positive"),
+             y = "Number of lots that test positive",
+             x = "Number of positive samples per positive lot") +
+        theme_classic()+
+        theme(text = element_text(size = 18))
+    }
+  })
+
+  
+  
+  
+  
+  
+  
+  
+  ## Scenario 2 result render ----
+  ### Text output ----
   output$scenario2_output <- renderUI({
     # Check for the correct variable name
     if (is.null(results$pos.lots.scen2_results)) {
@@ -275,20 +367,27 @@ server <- function(input, output) {
     }
   })
   
-  ## Generate summary plot ----
-  output$summary_plot <- renderPlot({
-    if (!is.null(results$pos.lots.scen1_results)) {
-      
+  output$scenario2_graph_title <- renderUI({
+    if (is.null(results$pos.lots.scen2_results)) {
+      NULL
+    } else {
+      h5("Even in positive lots, few individual samples test positive.")
+    }
+  })
+  
+  ### Positive lot graph ----
+  output$scen2_posLot_plot <- renderPlot({
+    if (!is.null(results$pos.lots.scen2_results)) {
       plot_data <- create_summary_data(results, n_sim) 
-        
       
       plot_data |> 
-        filter(metric == "Lots") |> 
-        mutate(pct_formatted = paste0(percentage, "%")) |> 
-      ggplot(aes(x = scenario, 
-                            y = percentage, 
-                            fill = result,
-                            label = pct_formatted)) +
+        filter(metric == "Lots",
+               scenario == "Scenario 2") |> 
+        mutate(pct_formatted = paste0(round(percentage, digits = 1), "%")) |> 
+        ggplot(aes(x = scenario, 
+                   y = percentage, 
+                   fill = result,
+                   label = pct_formatted)) +
         geom_col(position = "stack", width = 0.7) +
         geom_text(
           position = position_stack(vjust = 0.5),
@@ -301,42 +400,55 @@ server <- function(input, output) {
         scale_y_continuous(labels = function(x) paste0(x, "%"), 
                            limits = c(0, 100)) +
         labs(
-          title = "Detection Results by Scenario",
+          title = "Scenario 2 — Detection Results by Lot",
           subtitle = paste("Based on", format(n_sim, big.mark = ","), "simulated lots"),
-          x = "Scenario",
           y = "Percentage",
           fill = "Result"
         ) +
-        theme_linedraw() +
+        theme_classic()+
+        coord_flip()+
         theme(
           text = element_text(size = 18),
-          strip.text = element_text(face = "bold"),
-          strip.background = element_rect(fill = "#343a40"),
-          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
           legend.position = "bottom"
-        )
+        ) 
       
-      # onions_data <- data.frame(
-      #   scenario = c("Scenario 1", "Scenario 2"),
-      #   positive = c(
-      #     results$pos.onions.scen1_results,
-      #     results$pos.onions.scen2_results)) |> 
-      #   filter(positive != 0)
-      # 
-      # onions_data |> 
-      #   ggplot(aes(x = positive)) +
-      #   geom_bar()+
-      #   geom_text(
-      #     stat = "count",
-      #     position = position_stack(vjust = 0.5),
-      #     size = 10,
-      #     fontface = "bold",
-      #     color = "gray0",
-      #     aes(label = ..count..))+
-      #   scale_x_continuous(breaks = seq(min(onions_data$positive), max(onions_data$positive), by = 1))+
-      #   facet_grid(rows = vars(scenario))
     }
   })
+  
+  ### Positive samples graph ----
+  output$scen2_posOnions.posLot_plot <- renderPlot({
+    if (!is.null(results$pos.lots.scen2_results)) {
+      
+      onions_data <- data.frame(
+        scenario = c("Scenario 2"),
+        positive = c(
+          results$pos.onions.scen2_results)) |>
+        filter(positive != 0)
+      
+      onions_data |>
+        ggplot(aes(x = positive)) +
+        geom_bar(fill = "#f0ad4e")+
+        geom_text(
+          stat = "count",
+          position = position_stack(vjust = 0.5),
+          size = 10,
+          fontface = "bold",
+          color = "gray0",
+          aes(label = ..count..))+
+        scale_x_continuous(breaks = seq(min(onions_data$positive), max(onions_data$positive), by = 1)) +
+        labs(title = paste("Distribution across the", format(nrow(onions_data), big.mark = ",", scientific = FALSE), "simulated lots that tested positive"),
+             y = "Number of lots that test positive",
+             x = "Number of positive samples per positive lot") +
+        theme_classic()+
+        theme(text = element_text(size = 18))
+    }
+  })
+
+  
+
   
 }
 
