@@ -114,10 +114,23 @@ ui <- fluidPage(
         card_header(class="card text-white bg-info mb-3",
           "Scenario 1 Results"),
         card_body(
-          uiOutput("scenario1_output"),
-          plotOutput("scen1_posLot_plot"),
-          uiOutput("scenario1_graph_title"),
-          plotOutput("scen1_posOnions.posLot_plot")
+          # Loading indicator for Scenario 1
+          conditionalPanel(
+            condition = "output.loading_sim == true",
+            div(
+              style = "text-align: center; padding: 50px;",
+              div(class = "spinner-border text-info", role = "status", style = "width: 3rem; height: 3rem;"),
+              h4("Running simulation...", style = "margin-top: 20px; color: #17a2b8;")
+            )
+          ),
+          # Results (hidden during loading)
+          conditionalPanel(
+            condition = "output.loading_sim != true",
+            uiOutput("scenario1_output"),
+            plotOutput("scen1_posLot_plot"),
+            uiOutput("scenario1_graph_title"),
+            plotOutput("scen1_posOnions.posLot_plot")
+          )
         )
       ),
       
@@ -126,10 +139,23 @@ ui <- fluidPage(
         card_header(class = "card text-white bg-warning mb-3",
           "Scenario 2 Results"),
         card_body(
-          uiOutput("scenario2_output"),
-          plotOutput("scen2_posLot_plot"),
-          uiOutput("scenario2_graph_title"),
-          plotOutput("scen2_posOnions.posLot_plot")
+          # Loading indicator for Scenario 2
+          conditionalPanel(
+            condition = "output.loading_sim == true",
+            div(
+              style = "text-align: center; padding: 50px;",
+              div(class = "spinner-border text-warning", role = "status", style = "width: 3rem; height: 3rem;"),
+              h4("Running simulation...", style = "margin-top: 20px; color: #ffc107;")
+            )
+          ),
+          # Results (hidden during loading)
+          conditionalPanel(
+            condition = "output.loading_sim != true",
+            uiOutput("scenario2_output"),
+            plotOutput("scen2_posLot_plot"),
+            uiOutput("scenario2_graph_title"),
+            plotOutput("scen2_posOnions.posLot_plot")
+          )
         )
       )
     )
@@ -140,7 +166,10 @@ ui <- fluidPage(
 # Define server ----
 server <- function(input, output) {
   # define number of iterations
-  n_sim <- 10000
+  n_sim <- 100000
+  
+  # Create reactive value to track loading state
+  loading_sim <- reactiveVal(FALSE)
   
   # Create reactive values to store results
   results <- reactiveValues(
@@ -152,44 +181,63 @@ server <- function(input, output) {
     scen2.sim_results        = NULL
   )
   
+  # Output the loading state for the UI
+  output$loading_sim <- reactive({
+    loading_sim()
+  })
+  outputOptions(output, "loading_sim", suspendWhenHidden = FALSE)
+  
   observeEvent(input$run_sim, {
-    # Prep vectors
-    # positive lots
-    pos.lots.scen1.stor <- numeric(length = n_sim)
-    pos.lots.scen2.stor <- numeric(length = n_sim)
+    loading_sim(TRUE)
     
-    # positive onions
-    pos.onions.scen1.stor <- numeric(length = n_sim)
-    pos.onions.scen2.stor <- numeric(length = n_sim)
-
-    for (i in 1:n_sim){
-      ## Generate distributions based off user input ----
-      scenario1.sim <- generate_filtered_ZAGA(input$scenario1.sample,    # Units: logCFU/onion
-                                              mu    = norm.incom.contam.mu,
-                                              sigma = norm.incom.contam.sigma,
-                                              nu    = 1-(input$scenario1.prev/100))
+    isolate({
+      # Prep vectors
+      # positive lots
+      pos.lots.scen1.stor <- numeric(length = n_sim)
+      pos.lots.scen2.stor <- numeric(length = n_sim)
       
-      scenario2.sim <- generate_filtered_ZAGA(input$scenario2.sample,    # Units: logCFU/onion
-                                              mu    = norm.incom.contam.mu,
-                                              sigma = norm.incom.contam.sigma,
-                                              nu    = 1-(input$scenario2.prev/100))
+      # positive onions
+      pos.onions.scen1.stor <- numeric(length = n_sim)
+      pos.onions.scen2.stor <- numeric(length = n_sim)
       
-      ## Update storage vectors ----
-      # across iterations (lots), sum up any time the any of the samples are pos
-      pos.lots.scen1.stor[i] <- sum(any(scenario1.sim > 0))
-      pos.lots.scen2.stor[i] <- sum(any(scenario2.sim > 0))
+      for (i in 1:n_sim){
+        ## Generate distributions based off user input ----
+        scenario1.sim <- generate_filtered_ZAGA(input$scenario1.sample,    # Units: logCFU/onion
+                                                mu    = norm.incom.contam.mu,
+                                                sigma = norm.incom.contam.sigma,
+                                                nu    = 1-(input$scenario1.prev/100))
+        
+        scenario2.sim <- generate_filtered_ZAGA(input$scenario2.sample,    # Units: logCFU/onion
+                                                mu    = norm.incom.contam.mu,
+                                                sigma = norm.incom.contam.sigma,
+                                                nu    = 1-(input$scenario2.prev/100))
+        
+        ## Update storage vectors ----
+        # across iterations (lots), sum up any time the any of the samples are pos
+        pos.lots.scen1.stor[i] <- sum(any(scenario1.sim > 0))
+        pos.lots.scen2.stor[i] <- sum(any(scenario2.sim > 0))
+        
+        # across iterations, sum up the number of positive onions
+        pos.onions.scen1.stor[i] <- sum(scenario1.sim > 0)
+        pos.onions.scen2.stor[i] <- sum(scenario2.sim > 0)
+        
+      }
       
-      # across iterations, sum up the number of positive onions
-      pos.onions.scen1.stor[i] <- sum(scenario1.sim > 0)
-      pos.onions.scen2.stor[i] <- sum(scenario2.sim > 0)
-      
-    }
+      # Store results in reactive values
+      results$pos.lots.scen1_results   <- pos.lots.scen1.stor
+      results$pos.lots.scen2_results   <- pos.lots.scen2.stor
+      results$pos.onions.scen1_results <- pos.onions.scen1.stor 
+      results$pos.onions.scen2_results <- pos.onions.scen2.stor 
+    })
     
-    # Store results in reactive values
-    results$pos.lots.scen1_results   <- pos.lots.scen1.stor
-    results$pos.lots.scen2_results   <- pos.lots.scen2.stor
-    results$pos.onions.scen1_results <- pos.onions.scen1.stor 
-    results$pos.onions.scen2_results <- pos.onions.scen2.stor  
+    # loading_sim(FALSE)
+    
+    # observe({
+    #   if (!is.null(results$pos.lots.scen1_results) && 
+    #       !is.null(results$pos.lots.scen2_results)) {
+    #     loading_sim(FALSE)
+    #   }
+    # })
   })
   
   ## Create the plot data ----
@@ -206,8 +254,8 @@ server <- function(input, output) {
     )
     
     # Calculate proportions for onions
-    total_onions_scen1 <- length(results$pos.onions.scen1_results) * input$scenario1.sample
-    total_onions_scen2 <- length(results$pos.onions.scen2_results) * input$scenario2.sample
+    total_onions_scen1 <- n_sim * input$scenario1.sample
+    total_onions_scen2 <- n_sim * input$scenario2.sample
     
     onions_data <- data.frame(
       scenario = c("Scenario 1", "Scenario 2"),
@@ -414,7 +462,6 @@ server <- function(input, output) {
           axis.ticks.y = element_blank(),
           legend.position = "bottom"
         ) 
-      
     }
   })
   
