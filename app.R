@@ -2,7 +2,6 @@ library(shiny)
 library(bslib)
 library(gamlss)
 library(tidyverse)
-library(wesanderson)
 
 source("00_setup.R")
 
@@ -171,6 +170,7 @@ server <- function(input, output) {
   # Create reactive value to track loading state
   loading_sim <- reactiveVal(FALSE)
   
+  
   # Create reactive values to store results
   results <- reactiveValues(
     pos.lots.scen1_results  = NULL,
@@ -185,6 +185,7 @@ server <- function(input, output) {
   output$loading_sim <- reactive({
     loading_sim()
   })
+  
   outputOptions(output, "loading_sim", suspendWhenHidden = FALSE)
   
   observeEvent(input$run_sim, {
@@ -230,15 +231,19 @@ server <- function(input, output) {
       results$pos.onions.scen2_results <- pos.onions.scen2.stor 
     })
     
-    # loading_sim(FALSE)
+    
+    loading_sim(FALSE)
     
     # observe({
-    #   if (!is.null(results$pos.lots.scen1_results) && 
-    #       !is.null(results$pos.lots.scen2_results)) {
-    #     loading_sim(FALSE)
-    #   }
+      # if (!is.null(results$pos.lots.scen1_results) &&
+      #     !is.null(results$pos.lots.scen2_results)) {
+      #   loading_sim(FALSE)
+      # }
     # })
   })
+  
+
+
   
   ## Create the plot data ----
   create_summary_data <- function(results, n_sim) {
