@@ -1,4 +1,5 @@
 library(shiny)
+library(shinycssloaders)
 library(bslib)
 library(gamlss)
 library(tidyverse)
@@ -34,76 +35,76 @@ ui <- fluidPage(
   
   
   ## App title ----
-    page_sidebar(
-      title = NULL,
+  page_sidebar(
+    title = NULL,
+    
+    sidebar = sidebar(
+      width = 450,
       
-      sidebar = sidebar(
-        width = 450,
+      
+      ## Scenario 1 options ----
+      card(
+        card_header(class="card text-white bg-info mb-3",
+                    "Scenario 1"),
         
+        numericInput("scenario1.lot",
+                     "Enter lot size",
+                     value = 22000000,
+                     min   = 1000,
+                     max   = 30000000,
+                     step  = 1000000),
         
-        ## Scenario 1 options ----
-        card(
-          card_header(class="card text-white bg-info mb-3",
-            "Scenario 1"),
-
-          numericInput("scenario1.lot",
-                       "Enter lot size",
-                       value = 22000000,
-                       min   = 1000,
-                       max   = 30000000,
-                       step  = 1000000),
-          
-          numericInput("scenario1.sample", 
-                       "How many samples do you want to take?",
-                       value = 60,
-                       min   = 1,
-                       max   = 500),
-          
-          sliderInput("scenario1.prev",
-                      "Percent of lot that's contaminated",
-                      min   = 0.01,
-                      max   = 10,
-                      value = 0.1,
-                      step  = 0.01,
-                      post  = "%",
-                      ticks = FALSE
-          ),
-          
+        numericInput("scenario1.sample", 
+                     "How many samples do you want to take?",
+                     value = 60,
+                     min   = 1,
+                     max   = 500),
+        
+        sliderInput("scenario1.prev",
+                    "Percent of lot that's contaminated",
+                    min   = 0.01,
+                    max   = 10,
+                    value = 0.1,
+                    step  = 0.01,
+                    post  = "%",
+                    ticks = FALSE
         ),
         
-        ## Scenario 2 options ----
-        card(
-          card_header(class = "card text-white bg-warning mb-3",
-                      "Scenario 2"),
-          
-          numericInput("scenario2.lot",
-                       "Enter lot size",
-                       value = 4250000,
-                       min   = 1000,
-                       max   = 30000000,
-                       step  = 1000000),
-          
-          numericInput("scenario2.sample", # Fixed duplicate ID
-                       "How many samples do you want to take?",
-                       value = 60,
-                       min   = 1,
-                       max   = 500),
-          
-          sliderInput("scenario2.prev",
-                      "Percent of lot that's contaminated",
-                      min   = 0.01,
-                      max   = 10,
-                      value = 0.1,
-                      step  = 0.01,
-                      post  = "%",
-                      ticks = FALSE
-          ),
-          
-          actionButton("run_sim", "Go!", class = "btn-success", width = "100%")
-        ),
       ),
+      
+      ## Scenario 2 options ----
+      card(
+        card_header(class = "card text-white bg-warning mb-3",
+                    "Scenario 2"),
         
-
+        numericInput("scenario2.lot",
+                     "Enter lot size",
+                     value = 4250000,
+                     min   = 1000,
+                     max   = 30000000,
+                     step  = 1000000),
+        
+        numericInput("scenario2.sample", # Fixed duplicate ID
+                     "How many samples do you want to take?",
+                     value = 60,
+                     min   = 1,
+                     max   = 500),
+        
+        sliderInput("scenario2.prev",
+                    "Percent of lot that's contaminated",
+                    min   = 0.01,
+                    max   = 10,
+                    value = 0.1,
+                    step  = 0.01,
+                    post  = "%",
+                    ticks = FALSE
+        ),
+        
+        actionButton("run_sim", "Go!", class = "btn-success", width = "100%")
+      ),
+    ),
+    
+    
     ## Scenario results ----
     layout_columns(
       col_widths = c(6, 6),
@@ -111,54 +112,28 @@ ui <- fluidPage(
       ### Scenario 1 ----
       card(
         card_header(class="card text-white bg-info mb-3",
-          "Scenario 1 Results"),
+                    "Scenario 1 Results"),
         card_body(
-          # Loading indicator for Scenario 1
-          conditionalPanel(
-            condition = "output.loading_sim == true",
-            div(
-              style = "text-align: center; padding: 50px;",
-              div(class = "spinner-border text-info", role = "status", style = "width: 3rem; height: 3rem;"),
-              h4("Running simulation...", style = "margin-top: 20px; color: #17a2b8;")
-            )
-          ),
-          # Results (hidden during loading)
-          conditionalPanel(
-            condition = "output.loading_sim != true",
-            uiOutput("scenario1_output"),
-            plotOutput("scen1_posLot_plot"),
-            uiOutput("scenario1_graph_title"),
-            plotOutput("scen1_posOnions.posLot_plot")
-          )
+          withSpinner(uiOutput("scenario1_output"), type = 4, color = "steelblue", proxy.height = "200px"),
+          withSpinner(plotOutput("scen1_posLot_plot"), type = 0, proxy.height = "0px"),
+          withSpinner(uiOutput("scenario1_graph_title"), type = 0, proxy.height = "0px"),
+          withSpinner(plotOutput("scen1_posOnions.posLot_plot"), type = 0, proxy.height = "0px"),
         )
       ),
       
       ### Scenario 2 ----
       card(
         card_header(class = "card text-white bg-warning mb-3",
-          "Scenario 2 Results"),
+                    "Scenario 2 Results"),
         card_body(
-          # Loading indicator for Scenario 2
-          conditionalPanel(
-            condition = "output.loading_sim == true",
-            div(
-              style = "text-align: center; padding: 50px;",
-              div(class = "spinner-border text-warning", role = "status", style = "width: 3rem; height: 3rem;"),
-              h4("Running simulation...", style = "margin-top: 20px; color: #ffc107;")
-            )
-          ),
-          # Results (hidden during loading)
-          conditionalPanel(
-            condition = "output.loading_sim != true",
-            uiOutput("scenario2_output"),
-            plotOutput("scen2_posLot_plot"),
-            uiOutput("scenario2_graph_title"),
-            plotOutput("scen2_posOnions.posLot_plot")
-          )
+          withSpinner(uiOutput("scenario2_output"), type = 4, color = "steelblue", proxy.height = "200px"),
+          withSpinner(plotOutput("scen2_posLot_plot"), type = 0, proxy.height = "0px"),
+          withSpinner(uiOutput("scenario2_graph_title"), type = 0, proxy.height = "0px"),
+          withSpinner(plotOutput("scen2_posOnions.posLot_plot"), type = 0, proxy.height = "0px"),
         )
       )
     )
-    )
+  )
 )
 
 
@@ -167,10 +142,7 @@ server <- function(input, output) {
   # define number of iterations
   n_sim <- 100000
   
-  # Create reactive value to track loading state
-  loading_sim <- reactiveVal(FALSE)
-  
-  
+
   # Create reactive values to store results
   results <- reactiveValues(
     pos.lots.scen1_results  = NULL,
@@ -181,65 +153,64 @@ server <- function(input, output) {
     scen2.sim_results        = NULL
   )
   
-  # Output the loading state for the UI
-  output$loading_sim <- reactive({
-    loading_sim()
-  })
-  
-  outputOptions(output, "loading_sim", suspendWhenHidden = FALSE)
-  
+
   observeEvent(input$run_sim, {
-    loading_sim(TRUE)
+    showSpinner("scenario1_output")
+    showSpinner("scen1_posLot_plot")
+    showSpinner("scenario1_graph_title")
+    showSpinner("scen1_posOnions.posLot_plot")
+    showSpinner("scenario2_output")
+    showSpinner("scen2_posLot_plot")
+    showSpinner("scenario2_graph_title")
+    showSpinner("scen2_posOnions.posLot_plot")
+    # Prep vectors
+    # positive lots
+    pos.lots.scen1.stor <- numeric(length = n_sim)
+    pos.lots.scen2.stor <- numeric(length = n_sim)
     
-    isolate({
-      # Prep vectors
-      # positive lots
-      pos.lots.scen1.stor <- numeric(length = n_sim)
-      pos.lots.scen2.stor <- numeric(length = n_sim)
+    # positive onions
+    pos.onions.scen1.stor <- numeric(length = n_sim)
+    pos.onions.scen2.stor <- numeric(length = n_sim)
+    
+    for (i in 1:n_sim){
+      ## Generate distributions based off user input ----
+      scenario1.sim <- generate_filtered_ZAGA(input$scenario1.sample,    # Units: logCFU/onion
+                                              mu    = norm.incom.contam.mu,
+                                              sigma = norm.incom.contam.sigma,
+                                              nu    = 1-(input$scenario1.prev/100))
       
-      # positive onions
-      pos.onions.scen1.stor <- numeric(length = n_sim)
-      pos.onions.scen2.stor <- numeric(length = n_sim)
+      scenario2.sim <- generate_filtered_ZAGA(input$scenario2.sample,    # Units: logCFU/onion
+                                              mu    = norm.incom.contam.mu,
+                                              sigma = norm.incom.contam.sigma,
+                                              nu    = 1-(input$scenario2.prev/100))
       
-      for (i in 1:n_sim){
-        ## Generate distributions based off user input ----
-        scenario1.sim <- generate_filtered_ZAGA(input$scenario1.sample,    # Units: logCFU/onion
-                                                mu    = norm.incom.contam.mu,
-                                                sigma = norm.incom.contam.sigma,
-                                                nu    = 1-(input$scenario1.prev/100))
-        
-        scenario2.sim <- generate_filtered_ZAGA(input$scenario2.sample,    # Units: logCFU/onion
-                                                mu    = norm.incom.contam.mu,
-                                                sigma = norm.incom.contam.sigma,
-                                                nu    = 1-(input$scenario2.prev/100))
-        
-        ## Update storage vectors ----
-        # across iterations (lots), sum up any time the any of the samples are pos
-        pos.lots.scen1.stor[i] <- sum(any(scenario1.sim > 0))
-        pos.lots.scen2.stor[i] <- sum(any(scenario2.sim > 0))
-        
-        # across iterations, sum up the number of positive onions
-        pos.onions.scen1.stor[i] <- sum(scenario1.sim > 0)
-        pos.onions.scen2.stor[i] <- sum(scenario2.sim > 0)
-        
-      }
+      ## Update storage vectors ----
+      # across iterations (lots), sum up any time the any of the samples are pos
+      pos.lots.scen1.stor[i] <- sum(any(scenario1.sim > 0))
+      pos.lots.scen2.stor[i] <- sum(any(scenario2.sim > 0))
       
-      # Store results in reactive values
-      results$pos.lots.scen1_results   <- pos.lots.scen1.stor
-      results$pos.lots.scen2_results   <- pos.lots.scen2.stor
-      results$pos.onions.scen1_results <- pos.onions.scen1.stor 
-      results$pos.onions.scen2_results <- pos.onions.scen2.stor 
-    })
+      # across iterations, sum up the number of positive onions
+      pos.onions.scen1.stor[i] <- sum(scenario1.sim > 0)
+      pos.onions.scen2.stor[i] <- sum(scenario2.sim > 0)
+      
+    }
     
+
+    # Store results in reactive values
+    results$pos.lots.scen1_results   <- pos.lots.scen1.stor
+    results$pos.lots.scen2_results   <- pos.lots.scen2.stor
+    results$pos.onions.scen1_results <- pos.onions.scen1.stor 
+    results$pos.onions.scen2_results <- pos.onions.scen2.stor 
     
-    loading_sim(FALSE)
-    
-    # observe({
-      # if (!is.null(results$pos.lots.scen1_results) &&
-      #     !is.null(results$pos.lots.scen2_results)) {
-      #   loading_sim(FALSE)
-      # }
-    # })
+    hideSpinner("scenario1_output")
+    hideSpinner("scen1_posLot_plot")
+    hideSpinner("scenario1_graph_title")
+    hideSpinner("scen1_posOnions.posLot_plot")
+    hideSpinner("scenario2_output")
+    hideSpinner("scen2_posLot_plot")
+    hideSpinner("scenario2_graph_title")
+    hideSpinner("scen2_posOnions.posLot_plot")
+
   })
   
 
@@ -259,8 +230,8 @@ server <- function(input, output) {
     )
     
     # Calculate proportions for onions
-    total_onions_scen1 <- n_sim * input$scenario1.sample
-    total_onions_scen2 <- n_sim * input$scenario2.sample
+    total_onions_scen1 <- length(results$pos.onions.scen1_results) * input$scenario1.sample
+    total_onions_scen2 <- length(results$pos.onions.scen2_results) * input$scenario2.sample
     
     onions_data <- data.frame(
       scenario = c("Scenario 1", "Scenario 2"),
@@ -320,6 +291,7 @@ server <- function(input, output) {
   
   ### Positive lot graph ----
   output$scen1_posLot_plot <- renderPlot({
+    showSpinner()
     if (!is.null(results$pos.lots.scen1_results)) {
       plot_data <- create_summary_data(results, n_sim) 
       
@@ -389,7 +361,7 @@ server <- function(input, output) {
         theme(text = element_text(size = 18))
     }
   })
-
+  
   
   
   
@@ -467,6 +439,7 @@ server <- function(input, output) {
           axis.ticks.y = element_blank(),
           legend.position = "bottom"
         ) 
+      
     }
   })
   
@@ -498,9 +471,9 @@ server <- function(input, output) {
         theme(text = element_text(size = 18))
     }
   })
-
   
-
+  
+  
   
 }
 
