@@ -114,7 +114,7 @@ ui <- fluidPage(
         card_header(class="card text-white bg-info mb-3",
                     "Scenario 1 Results"),
         card_body(
-          withSpinner(uiOutput("scenario1_output"), type = 4, color = "steelblue", proxy.height = "200px"),
+          withSpinner(uiOutput("scenario1_output"), type = 4, color = "#1f9bcf", proxy.height = "200px"),
           withSpinner(plotOutput("scen1_posLot_plot"), type = 0, proxy.height = "0px"),
           withSpinner(uiOutput("scenario1_graph_title"), type = 0, proxy.height = "0px"),
           withSpinner(plotOutput("scen1_posOnions.posLot_plot"), type = 0, proxy.height = "0px"),
@@ -126,7 +126,7 @@ ui <- fluidPage(
         card_header(class = "card text-white bg-warning mb-3",
                     "Scenario 2 Results"),
         card_body(
-          withSpinner(uiOutput("scenario2_output"), type = 4, color = "steelblue", proxy.height = "200px"),
+          withSpinner(uiOutput("scenario2_output"), type = 4, color = "#f0ad4e", proxy.height = "200px"),
           withSpinner(plotOutput("scen2_posLot_plot"), type = 0, proxy.height = "0px"),
           withSpinner(uiOutput("scenario2_graph_title"), type = 0, proxy.height = "0px"),
           withSpinner(plotOutput("scen2_posOnions.posLot_plot"), type = 0, proxy.height = "0px"),
@@ -310,7 +310,7 @@ server <- function(input, output) {
           fontface = "bold",
           color = "gray0"
         ) +
-        scale_fill_manual(values = c("negative" = "#9fc2b2", "positive" = "#a90636"),
+        scale_fill_manual(values = c("negative" = "#4bbf73", "positive" = "#d9534f"),
                           labels = c("negative" = "Negative", "positive" = "Positive")) +
         scale_y_continuous(labels = function(x) paste0(x, "%"), 
                            limits = c(0, 100)) +
@@ -420,7 +420,7 @@ server <- function(input, output) {
           fontface = "bold",
           color = "gray0"
         ) +
-        scale_fill_manual(values = c("negative" = "#9fc2b2", "positive" = "#a90636"),
+        scale_fill_manual(values = c("negative" = "#4bbf73", "positive" = "#d9534f"),
                           labels = c("negative" = "Negative", "positive" = "Positive")) +
         scale_y_continuous(labels = function(x) paste0(x, "%"), 
                            limits = c(0, 100)) +
