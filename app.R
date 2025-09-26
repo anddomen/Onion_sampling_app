@@ -3,7 +3,6 @@ library(shinycssloaders)
 library(bslib)
 library(gamlss)
 library(tidyverse)
-library(wesanderson)
 
 source("00_setup.R")
 
@@ -143,6 +142,7 @@ server <- function(input, output) {
   # define number of iterations
   n_sim <- 100000
   
+
   # Create reactive values to store results
   results <- reactiveValues(
     pos.lots.scen1_results  = NULL,
@@ -153,6 +153,7 @@ server <- function(input, output) {
     scen2.sim_results        = NULL
   )
   
+
   observeEvent(input$run_sim, {
     showSpinner("scenario1_output")
     showSpinner("scen1_posLot_plot")
@@ -194,6 +195,7 @@ server <- function(input, output) {
       
     }
     
+
     # Store results in reactive values
     results$pos.lots.scen1_results   <- pos.lots.scen1.stor
     results$pos.lots.scen2_results   <- pos.lots.scen2.stor
@@ -208,7 +210,11 @@ server <- function(input, output) {
     hideSpinner("scen2_posLot_plot")
     hideSpinner("scenario2_graph_title")
     hideSpinner("scen2_posOnions.posLot_plot")
+
   })
+  
+
+
   
   ## Create the plot data ----
   create_summary_data <- function(results, n_sim) {
