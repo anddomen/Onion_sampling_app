@@ -140,7 +140,7 @@ ui <- fluidPage(
 # Define server ----
 server <- function(input, output) {
   # define number of iterations
-  n_sim <- 100000
+  n_sim <- 10000
   
 
   # Create reactive values to store results
