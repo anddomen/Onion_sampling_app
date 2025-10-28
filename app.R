@@ -106,30 +106,42 @@ ui <- fluidPage(
     
     
     ## Scenario results ----
-    layout_columns(
-      col_widths = c(6, 6),
-      
+    page_fillable(
+
       ### Scenario 1 ----
       card(
         card_header(class="card text-white bg-info mb-3",
                     "Scenario 1 Results"),
         card_body(
-          withSpinner(uiOutput("scenario1_output"), type = 4, color = "#1f9bcf", proxy.height = "200px"),
-          withSpinner(plotOutput("scen1_posLot_plot"), type = 0, proxy.height = "0px"),
-          withSpinner(uiOutput("scenario1_graph_title"), type = 0, proxy.height = "0px"),
-          withSpinner(plotOutput("scen1_posOnions.posLot_plot"), type = 0, proxy.height = "0px"),
+          fluidRow(
+            column(6, 
+                   withSpinner(uiOutput("scenario1_output"), type = 4, color = "#1f9bcf", proxy.height = "200px"),
+                   withSpinner(plotOutput("scen1_posLot_plot"), type = 0, proxy.height = "0px")
+            ),
+            column(6, 
+                   withSpinner(uiOutput("scenario1_graph_title"), type = 0, proxy.height = "0px"),
+                   withSpinner(plotOutput("scen1_posOnions.posLot_plot"), type = 0, proxy.height = "0px")
+            )
+          )
         )
       ),
       
+      
       ### Scenario 2 ----
       card(
-        card_header(class = "card text-white bg-warning mb-3",
-                    "Scenario 2 Results"),
+          card_header(class = "card text-white bg-warning mb-3",
+                      "Scenario 2 Results"),
         card_body(
-          withSpinner(uiOutput("scenario2_output"), type = 4, color = "#f0ad4e", proxy.height = "200px"),
-          withSpinner(plotOutput("scen2_posLot_plot"), type = 0, proxy.height = "0px"),
-          withSpinner(uiOutput("scenario2_graph_title"), type = 0, proxy.height = "0px"),
-          withSpinner(plotOutput("scen2_posOnions.posLot_plot"), type = 0, proxy.height = "0px"),
+          fluidRow(
+            column(6, 
+                   withSpinner(uiOutput("scenario2_output"), type = 4, color = "#f0ad4e", proxy.height = "200px"),
+                   withSpinner(plotOutput("scen2_posLot_plot"), type = 0, proxy.height = "0px")
+            ),
+            column(6, 
+                   withSpinner(uiOutput("scenario2_graph_title"), type = 0, proxy.height = "0px"),
+                   withSpinner(plotOutput("scen2_posOnions.posLot_plot"), type = 0, proxy.height = "0px")
+            )
+          )
         )
       )
     )
