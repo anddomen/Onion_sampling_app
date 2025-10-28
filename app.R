@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyWidgets)
 library(shinycssloaders)
 library(bslib)
 library(gamlss)
@@ -53,22 +54,20 @@ ui <- fluidPage(
                      min   = 1000,
                      max   = 30000000,
                      step  = 1000000),
-        
+
+
         numericInput("scenario1.sample", 
                      "How many samples do you want to take?",
                      value = 60,
                      min   = 1,
                      max   = 500),
         
-        sliderInput("scenario1.prev",
-                    "Percent of lot that's contaminated",
-                    min   = 0.01,
-                    max   = 10,
-                    value = 0.1,
-                    step  = 0.01,
-                    post  = "%",
-                    ticks = FALSE
-        ),
+        numericInput("scenario1.contam",
+                     "Number of contaminated units within lot",
+                     value = 220000,
+                     min = 1,
+                     max = 30000000,
+                     step = 1),
         
       ),
       
@@ -90,18 +89,23 @@ ui <- fluidPage(
                      min   = 1,
                      max   = 500),
         
-        sliderInput("scenario2.prev",
-                    "Percent of lot that's contaminated",
-                    min   = 0.01,
-                    max   = 10,
-                    value = 0.1,
-                    step  = 0.01,
-                    post  = "%",
-                    ticks = FALSE
-        ),
+        numericInput("scenario2.contam",
+                     "Number of contaminated units within lot",
+                     value = 42500,
+                     min = 1,
+                     max = 30000000,
+                     step = 1),
         
         actionButton("run_sim", "Go!", class = "btn-success", width = "100%")
       ),
+      
+      tags$p(
+        style = "margin-top: 20px; font-size: 14px; color: #666;",
+        "Interested in how this app works? Check out the ",
+        tags$a(href = "https://github.com/anddomen/Onion_sampling_app", 
+               target = "_blank", 
+               "GitHub Repo!")
+      )
     ),
     
     
@@ -167,6 +171,34 @@ server <- function(input, output) {
   
 
   observeEvent(input$run_sim, {
+    
+    ## Validate inputs ----
+    ### Number of contaminated units can't exceed lot size
+    if (input$scenario1.contam > input$scenario1.lot) {
+      showNotification("Scenario 1: Contaminated units cannot exceed total lot size", type = "warning")
+      return()
+    }
+    
+    if (input$scenario2.contam > input$scenario2.lot) {
+      showNotification("Scenario 2: Contaminated units cannot exceed total lot size", type = "warning")
+      return()
+    }
+    
+    ### None of the values can be less than or equal to zero
+    if (any(c(input$scenario1.contam, input$scenario1.lot, input$scenario1.sample, 
+              input$scenario2.contam, input$scenario2.lot, input$scenario2.sample) <= 0)) {
+      showNotification("All values must be positive!", type = "warning")
+      return()
+    }
+    
+    ### Only whole numbers!
+    if (any(c(input$scenario1.contam, input$scenario1.lot, input$scenario1.sample, 
+              input$scenario2.contam, input$scenario2.lot, input$scenario2.sample) %% 1 != 0)) {
+      showNotification("All values must be whole numbers!", type = "warning")
+      return()
+    }
+    
+    # Load spinners
     showSpinner("scenario1_output")
     showSpinner("scen1_posLot_plot")
     showSpinner("scenario1_graph_title")
@@ -175,6 +207,8 @@ server <- function(input, output) {
     showSpinner("scen2_posLot_plot")
     showSpinner("scenario2_graph_title")
     showSpinner("scen2_posOnions.posLot_plot")
+
+    
     # Prep vectors
     # positive lots
     pos.lots.scen1.stor <- numeric(length = n_sim)
@@ -184,17 +218,22 @@ server <- function(input, output) {
     pos.onions.scen1.stor <- numeric(length = n_sim)
     pos.onions.scen2.stor <- numeric(length = n_sim)
     
+    ## Calculate prevalence ----
+    scenario1.prev <- 1-(input$scenario1.contam/input$scenario1.lot)
+    scenario2.prev <- 1-(input$scenario2.contam/input$scenario2.lot)
+    
+    
     for (i in 1:n_sim){
       ## Generate distributions based off user input ----
       scenario1.sim <- generate_filtered_ZAGA(input$scenario1.sample,    # Units: logCFU/onion
                                               mu    = norm.incom.contam.mu,
                                               sigma = norm.incom.contam.sigma,
-                                              nu    = 1-(input$scenario1.prev/100))
+                                              nu = scenario1.prev)
       
       scenario2.sim <- generate_filtered_ZAGA(input$scenario2.sample,    # Units: logCFU/onion
                                               mu    = norm.incom.contam.mu,
                                               sigma = norm.incom.contam.sigma,
-                                              nu    = 1-(input$scenario2.prev/100))
+                                              nu = scenario2.prev)
       
       ## Update storage vectors ----
       # across iterations (lots), sum up any time the any of the samples are pos
