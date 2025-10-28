@@ -48,26 +48,34 @@ ui <- fluidPage(
         card_header(class="card text-white bg-info mb-3",
                     "Scenario 1"),
         
-        numericInput("scenario1.lot",
-                     "Enter lot size",
-                     value = 22000000,
-                     min   = 1000,
-                     max   = 30000000,
-                     step  = 1000000),
+        shinyWidgets::autonumericInput(
+          inputId = "scenario1.lot",
+          label = "Enter lot size",
+          align = "left",
+          value = 22000000,
+          decimalPlaces = 0,
+          digitGroupSeparator = ",",
+          type = "number"
+        ),
 
 
-        numericInput("scenario1.sample", 
-                     "How many samples do you want to take?",
-                     value = 60,
-                     min   = 1,
-                     max   = 500),
+        shinyWidgets::autonumericInput(
+          inputId = "scenario1.sample",
+          label = "How many samples do you want to take?",
+          align = "left",
+          value = 60,
+          decimalPlaces = 0,
+          digitGroupSeparator = ","
+        ),
         
-        numericInput("scenario1.contam",
-                     "Number of contaminated units within lot",
-                     value = 220000,
-                     min = 1,
-                     max = 30000000,
-                     step = 1),
+        shinyWidgets::autonumericInput(
+          inputId = "scenario1.contam",
+          label = "Number of contaminated units within lot",
+          align = "left",
+          value = 22000,
+          decimalPlaces = 0,
+          digitGroupSeparator = ","
+        ),
         
       ),
       
@@ -76,25 +84,32 @@ ui <- fluidPage(
         card_header(class = "card text-white bg-warning mb-3",
                     "Scenario 2"),
         
-        numericInput("scenario2.lot",
-                     "Enter lot size",
-                     value = 4250000,
-                     min   = 1000,
-                     max   = 30000000,
-                     step  = 1000000),
+        shinyWidgets::autonumericInput(
+          inputId = "scenario2.lot",
+          label = "Enter lot size",
+          align = "left",
+          value = 4250000,
+          decimalPlaces = 0,
+          digitGroupSeparator = ","
+        ),
         
-        numericInput("scenario2.sample", # Fixed duplicate ID
-                     "How many samples do you want to take?",
-                     value = 60,
-                     min   = 1,
-                     max   = 500),
+        shinyWidgets::autonumericInput(
+          inputId = "scenario2.sample",
+          label = "How many samples do you want to take?",
+          align = "left",
+          value = 60,
+          decimalPlaces = 0,
+          digitGroupSeparator = ","
+        ),
         
-        numericInput("scenario2.contam",
-                     "Number of contaminated units within lot",
-                     value = 42500,
-                     min = 1,
-                     max = 30000000,
-                     step = 1),
+        shinyWidgets::autonumericInput(
+          inputId = "scenario2.contam",
+          label = "Number of contaminated units within lot",
+          align = "left",
+          value = 4250,
+          decimalPlaces = 0,
+          digitGroupSeparator = ","
+        ),
         
         actionButton("run_sim", "Go!", class = "btn-success", width = "100%")
       ),
