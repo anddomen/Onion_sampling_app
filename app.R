@@ -278,8 +278,7 @@ server <- function(input, output) {
       p("Click Go to see results")
     } else {
       div(
-        h5("Summary Statistics"),
-        h6(paste("Across", 
+        h5(paste("Summary statistics across", 
                  format(n_sim, big.mark = ","), 
                  "simulated lots:")),
         p("Number of positive lots caught:",
@@ -287,8 +286,8 @@ server <- function(input, output) {
                     format(sum(results$pos.lots.scen1_results), big.mark = ","))),
         p("That's ", 
           tags$span(class = "h2",
-                    paste0(sum(results$pos.lots.scen1_results)/n_sim * 100, "%")))
-        
+                    paste0(sum(results$pos.lots.scen1_results)/n_sim * 100, "%"))),
+        br()
       )
     }
   })
@@ -297,7 +296,9 @@ server <- function(input, output) {
     if (is.null(results$pos.lots.scen1_results)) {
       NULL
     } else {
-      h5("Even in positive lots, few individual samples test positive.")
+      div(style = "margin-top: 88px;",
+          h5("Even in positive lots, few individual samples test positive.")
+      )
     }
   })
   
@@ -389,8 +390,7 @@ server <- function(input, output) {
       p("Click Go to see results")
     } else {
       div(
-        h5("Summary Statistics"),
-        h6(paste("Across", 
+        h5(paste("Summary statistics across", 
                  format(n_sim, big.mark = ","), 
                  "simulated lots:")),
         p("Number of positive lots caught:",
@@ -398,7 +398,8 @@ server <- function(input, output) {
                     format(sum(results$pos.lots.scen2_results), big.mark = ","))),
         p("That's ", 
           tags$span(class = "h2",
-                    paste0(sum(results$pos.lots.scen2_results)/n_sim * 100, "%")))
+                    paste0(sum(results$pos.lots.scen2_results)/n_sim * 100, "%"))),
+        br()
       )
       
     }
@@ -408,7 +409,9 @@ server <- function(input, output) {
     if (is.null(results$pos.lots.scen2_results)) {
       NULL
     } else {
-      h5("Even in positive lots, few individual samples test positive.")
+      div(style = "margin-top: 88px;",
+          h5("Even in positive lots, few individual samples test positive.")
+      )
     }
   })
   
