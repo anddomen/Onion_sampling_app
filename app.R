@@ -139,7 +139,7 @@ ui <- fluidPage(
             ),
             column(6, 
                    withSpinner(uiOutput("scenario1_graph_title"), type = 0, proxy.height = "0px"),
-                   withSpinner(plotOutput("scen1_posOnions.posLot_plot"), type = 0, proxy.height = "0px")
+                   withSpinner(plotOutput("scen1_posProd.posLot_plot"), type = 0, proxy.height = "0px")
             )
           )
         )
@@ -158,7 +158,7 @@ ui <- fluidPage(
             ),
             column(6, 
                    withSpinner(uiOutput("scenario2_graph_title"), type = 0, proxy.height = "0px"),
-                   withSpinner(plotOutput("scen2_posOnions.posLot_plot"), type = 0, proxy.height = "0px")
+                   withSpinner(plotOutput("scen2_posProd.posLot_plot"), type = 0, proxy.height = "0px")
             )
           )
         )
@@ -178,8 +178,8 @@ server <- function(input, output) {
   results <- reactiveValues(
     pos.lots.scen1_results  = NULL,
     pos.lots.scen2_results  = NULL,
-    pos.onions.scen1_results = NULL,
-    pos.onions.scen2_results = NULL,
+    pos.Prod.scen1_results = NULL,
+    pos.Prod.scen2_results = NULL,
     scen1.sim_results        = NULL,
     scen2.sim_results        = NULL
   )
@@ -217,11 +217,11 @@ server <- function(input, output) {
     showSpinner("scenario1_output")
     showSpinner("scen1_posLot_plot")
     showSpinner("scenario1_graph_title")
-    showSpinner("scen1_posOnions.posLot_plot")
+    showSpinner("scen1_posProd.posLot_plot")
     showSpinner("scenario2_output")
     showSpinner("scen2_posLot_plot")
     showSpinner("scenario2_graph_title")
-    showSpinner("scen2_posOnions.posLot_plot")
+    showSpinner("scen2_posProd.posLot_plot")
 
     
     # Prep vectors
@@ -229,9 +229,9 @@ server <- function(input, output) {
     pos.lots.scen1.stor <- numeric(length = n_sim)
     pos.lots.scen2.stor <- numeric(length = n_sim)
     
-    # positive onions
-    pos.onions.scen1.stor <- numeric(length = n_sim)
-    pos.onions.scen2.stor <- numeric(length = n_sim)
+    # positive Prod
+    pos.Prod.scen1.stor <- numeric(length = n_sim)
+    pos.Prod.scen2.stor <- numeric(length = n_sim)
     
     ## Calculate prevalence ----
     scenario1.prev <- 1-(input$scenario1.contam/input$scenario1.lot)
@@ -255,9 +255,9 @@ server <- function(input, output) {
       pos.lots.scen1.stor[i] <- sum(any(scenario1.sim > 0))
       pos.lots.scen2.stor[i] <- sum(any(scenario2.sim > 0))
       
-      # across iterations, sum up the number of positive onions
-      pos.onions.scen1.stor[i] <- sum(scenario1.sim > 0)
-      pos.onions.scen2.stor[i] <- sum(scenario2.sim > 0)
+      # across iterations, sum up the number of positive Prod
+      pos.Prod.scen1.stor[i] <- sum(scenario1.sim > 0)
+      pos.Prod.scen2.stor[i] <- sum(scenario2.sim > 0)
       
     }
     
@@ -265,17 +265,17 @@ server <- function(input, output) {
     # Store results in reactive values
     results$pos.lots.scen1_results   <- pos.lots.scen1.stor
     results$pos.lots.scen2_results   <- pos.lots.scen2.stor
-    results$pos.onions.scen1_results <- pos.onions.scen1.stor 
-    results$pos.onions.scen2_results <- pos.onions.scen2.stor 
+    results$pos.Prod.scen1_results <- pos.Prod.scen1.stor 
+    results$pos.Prod.scen2_results <- pos.Prod.scen2.stor 
     
     hideSpinner("scenario1_output")
     hideSpinner("scen1_posLot_plot")
     hideSpinner("scenario1_graph_title")
-    hideSpinner("scen1_posOnions.posLot_plot")
+    hideSpinner("scen1_posProd.posLot_plot")
     hideSpinner("scenario2_output")
     hideSpinner("scen2_posLot_plot")
     hideSpinner("scenario2_graph_title")
-    hideSpinner("scen2_posOnions.posLot_plot")
+    hideSpinner("scen2_posProd.posLot_plot")
 
   })
   
@@ -295,21 +295,21 @@ server <- function(input, output) {
       metric = "Lots"
     )
     
-    # Calculate proportions for onions
-    total_onions_scen1 <- length(results$pos.onions.scen1_results) * input$scenario1.sample
-    total_onions_scen2 <- length(results$pos.onions.scen2_results) * input$scenario2.sample
+    # Calculate proportions for Prod
+    total_Prod_scen1 <- length(results$pos.Prod.scen1_results) * input$scenario1.sample
+    total_Prod_scen2 <- length(results$pos.Prod.scen2_results) * input$scenario2.sample
     
-    onions_data <- data.frame(
+    Prod_data <- data.frame(
       scenario = c("Scenario 1", "Scenario 2"),
       positive = c(
-        sum(results$pos.onions.scen1_results) / total_onions_scen1 * 100,
-        sum(results$pos.onions.scen2_results) / total_onions_scen2 * 100
+        sum(results$pos.Prod.scen1_results) / total_Prod_scen1 * 100,
+        sum(results$pos.Prod.scen2_results) / total_Prod_scen2 * 100
       ),
-      metric = "Onions"
+      metric = "Prod"
     )
     
     # Combine and add negative percentages
-    combined_data <- rbind(lots_data, onions_data)
+    combined_data <- rbind(lots_data, Prod_data)
     combined_data$negative <- 100 - combined_data$positive
     
     # Reshape to long format for stacking
@@ -319,7 +319,7 @@ server <- function(input, output) {
                    values_to = "percentage") %>%
       mutate(
         result = factor(result, levels = c("negative", "positive")),
-        metric = factor(metric, levels = c("Lots", "Onions"))
+        metric = factor(metric, levels = c("Lots", "Prod"))
       )
     
     return(plot_data)
@@ -400,35 +400,34 @@ server <- function(input, output) {
     }
   })
   
+  
   ### Positive samples graph ----
-  output$scen1_posOnions.posLot_plot <- renderPlot({
+  output$scen1_posProd.posLot_plot <- renderPlot({
     if (!is.null(results$pos.lots.scen1_results)) {
       
-      onions_data <- data.frame(
+      Prod_data <- data.frame(
         scenario = c("Scenario 1"),
         positive = c(
-          results$pos.onions.scen1_results)) |>
+          results$pos.Prod.scen1_results)) |>
         filter(positive != 0)
       
-      onions_data |>
+      Prod_data |>
         ggplot(aes(x = positive)) +
         geom_bar(fill = "#1f9bcf")+
         geom_text(
           stat = "count",
-          position = position_stack(vjust = 0.5),
           size = 10,
           fontface = "bold",
           color = "gray0",
-          aes(label = ..count..))+
-        scale_x_continuous(breaks = seq(min(onions_data$positive), max(onions_data$positive), by = 1)) +
-        labs(title = paste("Distribution across the", format(nrow(onions_data), big.mark = ",", scientific = FALSE), "simulated lots that tested positive"),
+          aes(label = after_stat(count), y = after_stat(count / 2)))+  
+        scale_x_continuous(breaks = seq(min(Prod_data$positive), max(Prod_data$positive), by = 1)) +
+        labs(title = paste("Distribution across the", format(nrow(Prod_data), big.mark = ",", scientific = FALSE), "simulated lots that tested positive"),
              y = "Number of lots that test positive",
              x = "Number of positive samples per positive lot") +
         theme_classic()+
         theme(text = element_text(size = 18))
     }
   })
-  
   
   
   
@@ -513,16 +512,16 @@ server <- function(input, output) {
   })
   
   ### Positive samples graph ----
-  output$scen2_posOnions.posLot_plot <- renderPlot({
+  output$scen2_posProd.posLot_plot <- renderPlot({
     if (!is.null(results$pos.lots.scen2_results)) {
       
-      onions_data <- data.frame(
+      Prod_data <- data.frame(
         scenario = c("Scenario 2"),
         positive = c(
-          results$pos.onions.scen2_results)) |>
+          results$pos.Prod.scen2_results)) |>
         filter(positive != 0)
       
-      onions_data |>
+      Prod_data |>
         ggplot(aes(x = positive)) +
         geom_bar(fill = "#f0ad4e")+
         geom_text(
@@ -531,19 +530,15 @@ server <- function(input, output) {
           size = 10,
           fontface = "bold",
           color = "gray0",
-          aes(label = ..count..))+
-        scale_x_continuous(breaks = seq(min(onions_data$positive), max(onions_data$positive), by = 1)) +
-        labs(title = paste("Distribution across the", format(nrow(onions_data), big.mark = ",", scientific = FALSE), "simulated lots that tested positive"),
+          aes(label = after_stat(count), y = after_stat(count / 2)))+  
+        scale_x_continuous(breaks = seq(min(Prod_data$positive), max(Prod_data$positive), by = 1)) +
+        labs(title = paste("Distribution across the", format(nrow(Prod_data), big.mark = ",", scientific = FALSE), "simulated lots that tested positive"),
              y = "Number of lots that test positive",
              x = "Number of positive samples per positive lot") +
         theme_classic()+
         theme(text = element_text(size = 18))
     }
   })
-  
-  
-  
-  
 }
 
 # Run the application 
