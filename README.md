@@ -1,6 +1,6 @@
 # Product Sampling App
 
-**A link to the app is [here.](https://ahrouj-andrea0domen.shinyapps.io/onion_sampling_app/)**
+**A link to the app is [here.](https://ahrouj-andrea0domen.shinyapps.io/product_sampling_app/)**
 
 A little Shiny app used to simulate finished product sampling to detect contaminated lots. The app uses Monte Carlo simulations to evaluate the effectiveness of different sample sizes taken from a lot of a given size and contamination prevalence. It can compare two different scenarios side-by-side. The results include the probability of detecting positive lots and the distribution of positive samples within those lots. This was created for use as an education tool.
 
