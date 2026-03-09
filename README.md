@@ -2,7 +2,9 @@
 
 **A link to the app is [here.](https://ahrouj-andrea0domen.shinyapps.io/product_sampling_app/)**
 
-A little Shiny app used to simulate finished product sampling to detect contaminated lots. The app uses Monte Carlo simulations to evaluate the effectiveness of different sample sizes taken from a lot of a given size and contamination prevalence. It can compare two different scenarios side-by-side. The results include the probability of detecting positive lots and the distribution of positive samples within those lots. This was created for use as an education tool.
+*Note: app may be temporarily offline during periods of low activity to conserve resources. It can still be run locally*
+
+A little Shiny app used to simulate finished product sampling to detect contaminated lots. The app uses Monte Carlo simulations to evaluate the effectiveness of different sample sizes taken from a lot of a given size and contamination prevalence. The results include the probability of detecting positive lots and the distribution of positive samples within those lots. This was created for use as an education tool.
 
 ## Features
 
@@ -26,4 +28,4 @@ The simulations rely on a Zero-Adjusted Gamma (ZAGA) distribution to simulate co
 
 ## Acknowledgements
 
-Special thanks to Dr. James Molyneux for coding help and optimization. Claude was used in the creation of this app to address errors, however, the bulk of the code remains human written.
+Special thanks to Dr. James Molyneux for coding help and optimization. Claude was used to debug, however, the bulk of the code remains human written.
