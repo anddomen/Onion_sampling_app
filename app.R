@@ -42,8 +42,12 @@ ui <- fluidPage(
     sidebar = sidebar(
       width = 450,
       
+      # the below line deals with scenario options for mobile, it ensures
+      # options don't end up below results.
+      # open = list(desktop = "open", mobile = "closed"),
       
-      ## Scenario 1 options ----
+      
+      ## Scenario options ----
       card(
         card_header(class="card text-white bg-info mb-3",
                     "Scenario Options"),
@@ -93,22 +97,18 @@ ui <- fluidPage(
     
     
     ## Scenario results ----
-    page_fillable(
-
-      ### Scenario 1 ----
-      card(
-        card_header(class="card text-white bg-info mb-3",
-                    "Scenario Results"),
-        card_body(
-          fluidRow(
-            column(6, 
-                   withSpinner(uiOutput("scenario1_output"), type = 4, color = "#1f9bcf", proxy.height = "200px"),
-                   withSpinner(plotOutput("scen1_posLot_plot"), type = 0, proxy.height = "0px")
-            ),
-            column(6, 
-                   withSpinner(uiOutput("scenario1_graph_title"), type = 0, proxy.height = "0px"),
-                   withSpinner(plotOutput("scen1_posProd.posLot_plot"), type = 0, proxy.height = "0px")
-            )
+    card(
+      card_header(class="card text-white bg-info mb-3",
+                  "Scenario Results"),
+      card_body(
+        fluidRow(
+          column(6, 
+                 withSpinner(uiOutput("scenario1_output"), type = 4, color = "#1f9bcf", proxy.height = "200px"),
+                 withSpinner(plotOutput("scen1_posLot_plot"), type = 0, proxy.height = "0px")
+          ),
+          column(6, 
+                 withSpinner(uiOutput("scenario1_graph_title"), type = 0, proxy.height = "0px"),
+                 withSpinner(plotOutput("scen1_posProd.posLot_plot"), type = 0, proxy.height = "0px")
           )
         )
       )
@@ -299,7 +299,7 @@ server <- function(input, output) {
         scale_y_continuous(labels = function(x) paste0(x, "%"), 
                            limits = c(0, 100)) +
         labs(
-          title = "Scenario 1 — Detection Results by Lot",
+          title = "Detection Results by Lot",
           subtitle = paste("Based on", format(n_sim, big.mark = ","), "simulated lots"),
           y = "Percentage",
           fill = "Result"
@@ -339,7 +339,7 @@ server <- function(input, output) {
           color = "gray0",
           aes(label = after_stat(count), y = after_stat(count / 2)))+  
         scale_x_continuous(breaks = seq(min(Prod_data$positive), max(Prod_data$positive), by = 1)) +
-        labs(title = paste("Distribution across the", format(nrow(Prod_data), big.mark = ",", scientific = FALSE), "simulated lots that tested positive"),
+        labs(title = paste("Distribution across the", format(nrow(Prod_data), big.mark = ",", scientific = FALSE), "simulated lots \nthat tested positive"),
              y = "Number of lots that test positive",
              x = "Number of positive samples per positive lot") +
         theme_classic()+
